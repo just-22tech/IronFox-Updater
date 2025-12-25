@@ -1,0 +1,41 @@
+name: Update Browser APKs (Rclone)
+
+on:
+  schedule:
+    - cron: '0 */2 * * *'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install Python dependencies
+      run: |
+        pip install requests
+
+    - name: Install Rclone & Config
+      env:
+        RCLONE_CONF: ${{ secrets.RCLONE_CONFIG }}
+      run: |
+        # 1. Install Rclone
+        sudo -v ; curl https://rclone.org/install.sh | sudo bash
+        
+        # 2. Create Config File from Secret
+        mkdir -p ~/.config/rclone
+        echo "$RCLONE_CONF" > ~/.config/rclone/rclone.conf
+        
+        # 3. Verify (Optional - just to check whether the config has loaded)
+        rclone listremotes
+
+    - name: Run Update Script
+      run: |
+        python main.py
